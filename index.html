@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>우리의 위시리스트</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Nunito', sans-serif; background: #f0f7ff; min-height: 100vh; padding: 1rem; }
+.app { max-width: 480px; margin: 0 auto; }
+.top-header { text-align: center; padding: 1.2rem 0 0.5rem; }
+.top-title { font-size: 22px; font-weight: 700; color: #185FA5; }
+.top-sub { font-size: 12px; color: #378ADD; margin-top: 3px; }
+.sync-pill { display: flex; align-items: center; gap: 5px; background: #E6F1FB; border-radius: 20px; padding: 4px 14px; font-size: 11px; color: #185FA5; width: fit-content; margin: 8px auto 1rem; font-weight: 600; }
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #378ADD; animation: pulse 2s infinite; }
+.sync-dot.err { background: #E24B4A; animation: none; }
+.sync-dot.ok { background: #1D9E75; animation: none; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
+.notif { border-radius: 16px; padding: 10px 16px; font-size: 13px; margin-bottom: 10px; text-align: center; font-weight: 600; animation: pop 0.25s ease; }
+.notif.info { background: #E6F1FB; color: #185FA5; }
+.notif.warn { background: #FAEEDA; color: #854F0B; }
+.notif.err  { background: #FCEBEB; color: #A32D2D; }
+.notif.ok   { background: #E1F5EE; color: #0F6E56; }
+@keyframes pop { from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)} }
+
+/* 설정 카드 */
+.setup-card { background: #b3ddff; border: 2px solid #85B7EB; border-radius: 20px; padding: 1.3rem 1.4rem; margin-bottom: 1rem; }
+.setup-title { font-size: 15px; font-weight: 700; color: #042C53; margin-bottom: 6px; }
+.setup-desc { font-size: 12px; color: #185FA5; margin-bottom: 12px; line-height: 1.7; }
+.setup-desc b { color: #042C53; }
+.url-row { display: flex; gap: 8px; }
+.url-row input { flex: 1; border-radius: 12px; border: 2px solid #85B7EB; padding: 9px 12px; font-size: 12px; font-family: 'Nunito', sans-serif; background: rgba(255,255,255,0.9); color: #042C53; outline: none; }
+.url-row input:focus { border-color: #185FA5; }
+.url-btn { background: #185FA5; color: #fff; border: none; border-radius: 12px; padding: 9px 16px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'Nunito', sans-serif; }
+.url-btn:hover { background: #0C447C; }
+.connected-bar { display: flex; align-items: center; justify-content: space-between; }
+.connected-badge { background: rgba(255,255,255,0.65); border-radius: 20px; padding: 5px 14px; font-size: 12px; color: #0C447C; font-weight: 700; }
+.disconnect-btn { font-size: 12px; color: #185FA5; background: none; border: none; cursor: pointer; text-decoration: underline; font-family: 'Nunito', sans-serif; }
+
+/* 탭 */
+.tabs { display: flex; gap: 6px; margin-bottom: 1rem; }
+.tab { flex: 1; padding: 9px 6px; font-size: 13px; font-weight: 700; border: 2px solid #B5D4F4; background: #fff; border-radius: 14px; cursor: pointer; color: #378ADD; transition: all 0.15s; font-family: 'Nunito', sans-serif; }
+.tab.active { background: #378ADD; border-color: #378ADD; color: #fff; }
+
+/* 비상금 카드 */
+.fund-card { background: #b3ddff; border-radius: 20px; border: 2px solid #85B7EB; padding: 1.2rem 1.4rem; margin-bottom: 1rem; }
+.fund-row { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 10px; }
+.fund-lbl { font-size: 11px; color: #0C447C; margin-bottom: 3px; font-weight: 700; }
+.fund-num { font-size: 32px; font-weight: 700; color: #042C53; }
+.fund-won { font-size: 15px; color: #185FA5; margin-left: 2px; }
+.fund-addbtn { background: #185FA5; color: #fff; border: none; border-radius: 20px; padding: 7px 16px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: 'Nunito', sans-serif; }
+.prog-track { height: 9px; background: #85B7EB; border-radius: 9px; overflow: hidden; margin-bottom: 7px; }
+.prog-fill { height: 100%; background: #185FA5; border-radius: 9px; transition: width 0.5s ease; }
+.fund-hint { font-size: 11px; color: #0C447C; font-weight: 600; }
+.fund-stats { display: flex; gap: 8px; margin-top: 10px; }
+.fst { flex: 1; background: rgba(255,255,255,0.55); border-radius: 14px; padding: 9px 10px; text-align: center; }
+.fst-n { font-size: 14px; font-weight: 700; color: #042C53; }
+.fst-l { font-size: 10px; color: #185FA5; margin-top: 2px; }
+
+/* 패널 */
+.panel { background: #fff; border: 2px solid #B5D4F4; border-radius: 20px; padding: 1rem 1.2rem; margin-bottom: 1rem; }
+.panel-title { font-size: 14px; font-weight: 700; color: #0C447C; margin-bottom: 12px; }
+.field { margin-bottom: 10px; }
+.field label { font-size: 11px; font-weight: 700; color: #185FA5; display: block; margin-bottom: 4px; }
+.field input { width: 100%; border-radius: 12px; border: 1.5px solid #B5D4F4; padding: 9px 12px; font-size: 13px; font-family: 'Nunito', sans-serif; color: #042C53; background: #fff; outline: none; }
+.field input:focus { border-color: #378ADD; }
+.pri-row { display: flex; gap: 6px; }
+.pri-btn { flex: 1; padding: 8px 4px; border-radius: 12px; border: 1.5px solid #B5D4F4; background: #fff; font-size: 12px; font-weight: 700; cursor: pointer; color: #185FA5; transition: all 0.15s; font-family: 'Nunito', sans-serif; }
+.pri-btn.sel-1 { background: #FCEBEB; border-color: #E24B4A; color: #791F1F; }
+.pri-btn.sel-2 { background: #FAEEDA; border-color: #EF9F27; color: #633806; }
+.pri-btn.sel-3 { background: #EEEDFE; border-color: #7F77DD; color: #3C3489; }
+.go-btn { width: 100%; padding: 11px; border-radius: 14px; background: #378ADD; color: #fff; border: none; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 6px; font-family: 'Nunito', sans-serif; transition: background 0.15s; }
+.go-btn:hover { background: #185FA5; }
+.go-btn.gray { background: #888780; }
+.go-btn.gray:hover { background: #5F5E5A; }
+
+/* 위시 카드 */
+.wish-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
+.wish-card { background: #fff; border: 2px solid #B5D4F4; border-radius: 18px; padding: 11px 14px; display: flex; align-items: center; gap: 10px; transition: all 0.2s; }
+.wish-card.can { background: #E6F1FB; border-color: #378ADD; }
+.wish-card.bought { opacity: 0.4; }
+.wish-card.bought .wname { text-decoration: line-through; }
+.pri-dot { width: 33px; height: 33px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; font-weight: 700; }
+.pri-dot.p1 { background: #FCEBEB; color: #A32D2D; }
+.pri-dot.p2 { background: #FAEEDA; color: #854F0B; }
+.pri-dot.p3 { background: #EEEDFE; color: #534AB7; }
+.winfo { flex: 1; min-width: 0; }
+.wname { font-size: 14px; font-weight: 600; color: #042C53; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wprice { font-size: 12px; color: #185FA5; margin-top: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.can-badge { background: #378ADD; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+.wbtns { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.ud-wrap { display: flex; flex-direction: column; }
+.ud { background: none; border: none; cursor: pointer; font-size: 11px; color: #378ADD; line-height: 1.3; padding: 1px 4px; }
+.buy-btn { background: #378ADD; color: #fff; border: none; border-radius: 10px; padding: 5px 10px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: 'Nunito', sans-serif; white-space: nowrap; }
+.buy-btn:hover { background: #185FA5; }
+.x-btn { background: none; border: none; cursor: pointer; color: #B5D4F4; font-size: 18px; font-weight: 700; padding: 2px 4px; line-height: 1; }
+.x-btn:hover { color: #E24B4A; }
+.empty { text-align: center; padding: 2.5rem; color: #B5D4F4; font-size: 14px; font-weight: 600; }
+
+/* 히스토리 */
+.hist-list { display: flex; flex-direction: column; gap: 6px; }
+.hist-row { display: flex; align-items: center; justify-content: space-between; background: #fff; border: 2px solid #B5D4F4; border-radius: 14px; padding: 10px 14px; }
+.hist-ico { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; margin-right: 10px; }
+.hist-ico.save  { background: #E1F5EE; color: #0F6E56; }
+.hist-ico.spend { background: #FCEBEB; color: #A32D2D; }
+.hist-name { font-size: 13px; font-weight: 600; color: #042C53; }
+.hist-date { font-size: 10px; color: #378ADD; margin-top: 1px; }
+.hist-amt { font-size: 13px; font-weight: 700; }
+.hist-amt.save  { color: #1D9E75; }
+.hist-amt.spend { color: #E24B4A; }
+.del-h { background: none; border: none; cursor: pointer; color: #B5D4F4; font-size: 15px; margin-left: 8px; }
+.del-h:hover { color: #E24B4A; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top-header">
+    <div class="top-title">우리의 위시리스트</div>
+    <div class="top-sub">함께 모아서 함께 사요 💙</div>
+  </div>
+  <div class="sync-pill"><span class="sync-dot" id="sync-dot"></span><span id="sync-txt">연결 대기 중</span></div>
+  <div id="notif-area"></div>
+  <div id="setup-area"></div>
+  <div id="main-area" style="display:none;">
+    <div class="tabs">
+      <button class="tab active" onclick="goTab('wish',this)">위시리스트</button>
+      <button class="tab" onclick="goTab('save',this)">비상금 추가</button>
+      <button class="tab" onclick="goTab('hist',this)">내역</button>
+    </div>
+    <div id="tab-wish">
+      <div class="fund-card">
+        <div class="fund-row">
+          <div>
+            <div class="fund-lbl">현재 비상금</div>
+            <div><span class="fund-num" id="fund-disp">0</span><span class="fund-won">원</span></div>
+          </div>
+          <button class="fund-addbtn" onclick="goTab('save', document.querySelectorAll('.tab')[1])">+ 추가</button>
+        </div>
+        <div class="prog-track"><div class="prog-fill" id="prog" style="width:0%"></div></div>
+        <div class="fund-hint" id="fund-hint">위시리스트를 추가해보세요!</div>
+        <div class="fund-stats">
+          <div class="fst"><div class="fst-n" id="s-saved">0원</div><div class="fst-l">총 저축</div></div>
+          <div class="fst"><div class="fst-n" id="s-spent">0원</div><div class="fst-l">총 지출</div></div>
+          <div class="fst"><div class="fst-n" id="s-items">0개</div><div class="fst-l">위시리스트</div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">새 위시 추가하기</div>
+        <div class="field"><label>원하는 것</label><input type="text" id="wn" placeholder="예: 에어팟 프로" /></div>
+        <div class="field"><label>가격 (원)</label><input type="number" id="wp" placeholder="0" min="0" /></div>
+        <div class="field">
+          <label>우선순위</label>
+          <div class="pri-row">
+            <button class="pri-btn sel-1" data-p="1" onclick="selPri(this)">1순위</button>
+            <button class="pri-btn" data-p="2" onclick="selPri(this)">2순위</button>
+            <button class="pri-btn" data-p="3" onclick="selPri(this)">3순위</button>
+          </div>
+        </div>
+        <button class="go-btn" onclick="addWish()">위시리스트에 추가</button>
+      </div>
+      <div id="wish-area"></div>
+    </div>
+    <div id="tab-save" style="display:none;">
+      <div class="panel">
+        <div class="panel-title">이번 달 비상금 추가</div>
+        <div class="field"><label>금액 (원)</label><input type="number" id="sa" placeholder="0" min="0" /></div>
+        <div class="field"><label>메모</label><input type="text" id="sm" placeholder="예: 4월 용돈 남은 거" /></div>
+        <button class="go-btn" onclick="doSave()">비상금에 추가</button>
+      </div>
+      <div class="panel">
+        <div class="panel-title">비상금 직접 수정</div>
+        <div class="field"><label>현재 잔액으로 설정 (원)</label><input type="number" id="df" placeholder="0" min="0" /></div>
+        <button class="go-btn gray" onclick="doDirectFund()">직접 설정하기</button>
+      </div>
+    </div>
+    <div id="tab-hist" style="display:none;"><div id="hist-area"></div></div>
+  </div>
+</div>
+
+<script>
+let S = { fund:0, totalSaved:0, totalSpent:0, wishes:[], history:[] };
+let pri = 1;
+let GAS_URL = '';
+const LS_URL = 'wishlist_gas_url';
+const LS_DATA = 'wishlist_data_local';
+
+function selPri(el) {
+  document.querySelectorAll('.pri-btn').forEach(b => b.className = 'pri-btn');
+  el.classList.add('sel-' + el.dataset.p);
+  pri = +el.dataset.p;
+}
+
+function goTab(name, el) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  ['wish','save','hist'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === name ? '' : 'none';
+  });
+  if (name === 'hist') renderHist();
+}
+
+function renderSetup(connected) {
+  const area = document.getElementById('setup-area');
+  if (connected) {
+    area.innerHTML = `<div class="setup-card" style="margin-bottom:1rem;">
+      <div class="connected-bar">
+        <div>
+          <div class="fund-lbl" style="margin-bottom:5px;">Google 스프레드시트</div>
+          <div class="connected-badge">✓ 연결됨 — 모든 기기에서 동기화돼요</div>
+        </div>
+        <button class="disconnect-btn" onclick="disconnect()">연결 해제</button>
+      </div>
+    </div>`;
+    document.getElementById('main-area').style.display = '';
+  } else {
+    area.innerHTML = `<div class="setup-card">
+      <div class="setup-title">Google 스프레드시트 연결</div>
+      <div class="setup-desc">
+        Apps Script 배포 후 받은 URL을 입력하면<br>
+        <b>컴퓨터 · 핸드폰 어디서나</b> 데이터가 유지돼요!
+      </div>
+      <div class="url-row">
+        <input type="text" id="gas-url-input" placeholder="https://script.google.com/macros/s/..." />
+        <button class="url-btn" onclick="connectGAS()">연결</button>
+      </div>
+    </div>`;
+    document.getElementById('main-area').style.display = 'none';
+    setSyncStatus('URL을 입력해주세요', 'err');
+  }
+}
+
+async function connectGAS() {
+  const url = document.getElementById('gas-url-input').value.trim();
+  if (!url.startsWith('https://script.google.com')) {
+    notif('올바른 Apps Script URL을 입력해주세요', 'err'); return;
+  }
+  GAS_URL = url;
+  setSyncStatus('연결 확인 중...', '');
+  const ok = await loadFromGAS();
+  if (ok) {
+    localStorage.setItem(LS_URL, url);
+    renderSetup(true);
+    notif('연결됐어요! 이제 어디서든 데이터가 유지돼요 🎉', 'ok');
+    setInterval(loadFromGAS, 10000);
+  } else {
+    notif('연결 실패. URL을 다시 확인해주세요', 'err');
+    GAS_URL = '';
+  }
+}
+
+function disconnect() {
+  GAS_URL = '';
+  localStorage.removeItem(LS_URL);
+  renderSetup(false);
+}
+
+async function loadFromGAS() {
+  if (!GAS_URL) return false;
+  try {
+    const res = await fetch(GAS_URL + '?action=get');
+    const json = await res.json();
+    if (!json.ok) return false;
+    if (json.data) {
+      S = JSON.parse(json.data);
+      localStorage.setItem(LS_DATA, json.data);
+    } else {
+      S = { fund:0, totalSaved:0, totalSpent:0, wishes:[], history:[] };
+    }
+    render();
+    setSyncStatus('동기화됨', 'ok');
+    return true;
+  } catch(e) {
+    setSyncStatus('동기화 실패', 'err');
+    return false;
+  }
+}
+
+async function saveToGAS() {
+  const json = JSON.stringify(S);
+  localStorage.setItem(LS_DATA, json);
+  if (!GAS_URL) return;
+  try {
+    const encoded = encodeURIComponent(json);
+    await fetch(GAS_URL + '?action=set&data=' + encoded);
+    setSyncStatus('저장됨', 'ok');
+  } catch(e) {
+    setSyncStatus('저장 실패 (로컬엔 저장됨)', 'err');
+  }
+}
+
+function setSyncStatus(msg, type) {
+  document.getElementById('sync-txt').textContent = msg;
+  const dot = document.getElementById('sync-dot');
+  dot.className = 'sync-dot' + (type === 'ok' ? ' ok' : type === 'err' ? ' err' : '');
+}
+
+function fmt(n) { return Math.round(n).toLocaleString('ko-KR') + '원'; }
+
+function buyable() {
+  const sorted = S.wishes.filter(w => !w.bought).sort((a,b) => a.pri - b.pri || a.ts - b.ts);
+  let budget = S.fund;
+  const ok = new Set();
+  for (const w of sorted) {
+    if (budget >= w.price) { ok.add(w.id); budget -= w.price; } else break;
+  }
+  return ok;
+}
+
+function render() {
+  document.getElementById('fund-disp').textContent = Math.round(S.fund).toLocaleString('ko-KR');
+  document.getElementById('s-saved').textContent = fmt(S.totalSaved);
+  document.getElementById('s-spent').textContent = fmt(S.totalSpent);
+  document.getElementById('s-items').textContent = S.wishes.filter(w => !w.bought).length + '개';
+  const sorted = S.wishes.filter(w => !w.bought).sort((a,b) => a.pri - b.pri || a.ts - b.ts);
+  const goal = sorted[0] ? sorted[0].price : 0;
+  if (goal > 0 && S.fund < goal) {
+    const p = Math.min(100, Math.round(S.fund / goal * 100));
+    document.getElementById('prog').style.width = p + '%';
+    document.getElementById('fund-hint').textContent = `1순위까지 ${fmt(goal - S.fund)} 남았어요 (${p}%)`;
+  } else if (goal > 0) {
+    document.getElementById('prog').style.width = '100%';
+    document.getElementById('fund-hint').textContent = '1순위 항목을 살 수 있어요! 🎉';
+  } else {
+    document.getElementById('prog').style.width = '0%';
+    document.getElementById('fund-hint').textContent = '위시리스트를 추가해보세요!';
+  }
+  renderWishes();
+}
+
+function renderWishes() {
+  const ok = buyable();
+  const list = [...S.wishes].sort((a,b) => {
+    if (a.bought !== b.bought) return a.bought ? 1 : -1;
+    return a.pri - b.pri || a.ts - b.ts;
+  });
+  const area = document.getElementById('wish-area');
+  if (!list.length) {
+    area.innerHTML = '<div class="empty">아직 비어있어요.<br>원하는 것을 추가해봐요!</div>'; return;
+  }
+  area.innerHTML = '<div class="wish-list">' + list.map(w => {
+    const cb = ok.has(w.id);
+    return `<div class="wish-card ${cb && !w.bought ? 'can' : ''} ${w.bought ? 'bought' : ''}">
+      <div class="pri-dot p${w.pri}">${w.pri}</div>
+      <div class="winfo">
+        <div class="wname">${w.name}</div>
+        <div class="wprice">${fmt(w.price)}${cb && !w.bought ? '<span class="can-badge">살 수 있어요!</span>' : ''}</div>
+      </div>
+      <div class="wbtns">
+        <div class="ud-wrap">
+          <button class="ud" onclick="mv(${w.id},-1)">▲</button>
+          <button class="ud" onclick="mv(${w.id},1)">▼</button>
+        </div>
+        ${!w.bought ? `<button class="buy-btn" onclick="buyW(${w.id})">구매</button>` : ''}
+        <button class="x-btn" onclick="delW(${w.id})">×</button>
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+function renderHist() {
+  const area = document.getElementById('hist-area');
+  if (!S.history.length) { area.innerHTML = '<div class="empty">아직 내역이 없어요!</div>'; return; }
+  area.innerHTML = '<div class="hist-list">' + [...S.history].reverse().map((h, i) => {
+    const ri = S.history.length - 1 - i;
+    return `<div class="hist-row">
+      <div style="display:flex;align-items:center;">
+        <div class="hist-ico ${h.type}">${h.type === 'save' ? '+' : '−'}</div>
+        <div><div class="hist-name">${h.label}</div><div class="hist-date">${h.date}</div></div>
+      </div>
+      <div style="display:flex;align-items:center;">
+        <div class="hist-amt ${h.type}">${h.type === 'save' ? '+' : '−'}${fmt(h.amount)}</div>
+        <button class="del-h" onclick="delH(${ri})">×</button>
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+async function addWish() {
+  const n = document.getElementById('wn').value.trim();
+  const p = parseInt(document.getElementById('wp').value);
+  if (!n || !p || p <= 0) { notif('항목명과 가격을 입력해주세요', 'warn'); return; }
+  S.wishes.push({ id: Date.now(), name: n, price: p, pri, bought: false, ts: Date.now() });
+  document.getElementById('wn').value = '';
+  document.getElementById('wp').value = '';
+  await saveToGAS(); render(); notif(`"${n}" 추가됐어요!`, 'ok');
+}
+
+async function doSave() {
+  const a = parseInt(document.getElementById('sa').value);
+  const m = document.getElementById('sm').value.trim() || '비상금 추가';
+  if (!a || a <= 0) { notif('금액을 입력해주세요', 'warn'); return; }
+  S.fund += a; S.totalSaved += a;
+  S.history.push({ type: 'save', label: m, amount: a, date: today() });
+  document.getElementById('sa').value = '';
+  document.getElementById('sm').value = '';
+  await saveToGAS(); render(); notif(`${fmt(a)} 추가! 현재 비상금: ${fmt(S.fund)}`, 'ok');
+}
+
+async function doDirectFund() {
+  const v = parseInt(document.getElementById('df').value);
+  if (isNaN(v) || v < 0) { notif('올바른 금액을 입력해주세요', 'warn'); return; }
+  const diff = v - S.fund; S.fund = v;
+  if (diff !== 0) S.history.push({ type: diff > 0 ? 'save' : 'spend', label: '비상금 직접 수정', amount: Math.abs(diff), date: today() });
+  document.getElementById('df').value = '';
+  await saveToGAS(); render(); notif('비상금을 수정했어요!', 'ok');
+}
+
+async function buyW(id) {
+  const w = S.wishes.find(x => x.id === id);
+  if (!w) return;
+  if (S.fund < w.price) { notif(`${fmt(w.price - S.fund)} 더 필요해요`, 'warn'); return; }
+  S.fund -= w.price; S.totalSpent += w.price; w.bought = true;
+  S.history.push({ type: 'spend', label: w.name + ' 구매', amount: w.price, date: today() });
+  await saveToGAS(); render(); notif(`"${w.name}" 구매 완료! 🎉`, 'ok');
+}
+
+async function delW(id) { S.wishes = S.wishes.filter(x => x.id !== id); await saveToGAS(); render(); }
+async function delH(i) { S.history.splice(i, 1); await saveToGAS(); renderHist(); }
+
+async function mv(id, dir) {
+  const w = S.wishes.find(x => x.id === id);
+  const sorted = S.wishes.filter(x => !x.bought).sort((a,b) => a.pri - b.pri || a.ts - b.ts);
+  const pos = sorted.findIndex(x => x.id === id);
+  const tgt = sorted[pos + dir];
+  if (!tgt) return;
+  const tp = w.pri, tt = w.ts;
+  w.pri = tgt.pri; w.ts = tgt.ts - 1;
+  tgt.pri = tp; tgt.ts = tt + 1;
+  await saveToGAS(); render();
+}
+
+function today() { return new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }); }
+
+function notif(msg, type) {
+  const a = document.getElementById('notif-area');
+  const el = document.createElement('div');
+  el.className = 'notif ' + (type || 'info');
+  el.textContent = msg;
+  a.innerHTML = ''; a.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function init() {
+  const savedUrl = localStorage.getItem(LS_URL);
+  const savedData = localStorage.getItem(LS_DATA);
+  if (savedData) { try { S = JSON.parse(savedData); } catch(e){} }
+  if (savedUrl) {
+    GAS_URL = savedUrl;
+    renderSetup(true);
+    render();
+    loadFromGAS().then(ok => {
+      if (!ok) setSyncStatus('동기화 실패 (로컬 데이터 표시 중)', 'err');
+      else setInterval(loadFromGAS, 10000);
+    });
+  } else {
+    renderSetup(false);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
